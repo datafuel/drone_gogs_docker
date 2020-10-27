@@ -43,7 +43,7 @@ services:
     restart: always
     ports:
       - "10022:22"
-      - "3000:3000"
+      - "3030:3000"
     environment:
       - "RUN_CROND=true"
     volumes:
