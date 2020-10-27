@@ -1,0 +1,52 @@
+version: '3'
+services:
+  drone-server:
+    image: drone/drone:latest
+    ports:
+      - 80:80
+      - 443:443
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./drone_server/data:/data
+    environment:
+      - DRONE_GIT_ALWAYS_AUTH=false
+      - DRONE_SERVER_HOST=http://drone-server:80
+      - DRONE_GOGS_SERVER=http://gogs:3000
+      - DRONE_RPC_SECRET=cc00bf8e54a17125d4cdf8dd98cb9460
+      - DRONE_SERVER_PROTO=http
+  
+  drone-agent:
+    image: drone/agent:latest
+    restart: always
+    depends_on:
+      - drone-server
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DRONE_RUNNER_CAPACITY=2
+      - DRONE_SERVER=drone-server:9000
+      - DRONE_RPC_SECRET=cc00bf8e54a17125d4cdf8dd98cb9460
+  
+  postgres:
+      image: postgres:10-alpine
+      restart: always
+      environment:
+       - "POSTGRES_USER=${POSTGRES_USER}"
+       - "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
+       - "POSTGRES_DB=gogs"
+      volumes:
+       - "./db_data:/var/lib/postgresql/data"
+
+  gogs:
+    image: gogs/gogs:latest
+    restart: always
+    ports:
+      - "10022:22"
+      - "3000:3000"
+    environment:
+      - "RUN_CROND=true"
+    volumes:
+      - "./gogs_data:/data"
+    depends_on:
+      - postgres
